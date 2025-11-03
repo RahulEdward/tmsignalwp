@@ -42,11 +42,10 @@ app.config['SESSION_COOKIE_HTTPONLY'] = False  # Allow JavaScript access for deb
 app.config['SESSION_COOKIE_NAME'] = 'session'  # Default session cookie name
 app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour session lifetime
 
-# Initialize CORS - Allow specific origins for development
+# Initialize CORS - Allow all origins for production (TradingView webhooks)
 CORS(app, 
-     origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174", "http://127.0.0.1:5174",
-              "http://127.0.0.1:55235", "http://127.0.0.1:55236", "http://127.0.0.1:57228"],
-     supports_credentials=True,
+     resources={r"/api/*": {"origins": "*"}},  # Allow all origins for API endpoints
+     supports_credentials=False,  # TradingView webhooks don't use credentials
      allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
      methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
      expose_headers=["Content-Type", "Authorization"])
@@ -79,6 +78,18 @@ def test_cors():
     """Simple test endpoint to verify CORS is working"""
     from flask import jsonify
     return jsonify({"status": "success", "message": "CORS is working!"})
+
+@app.route('/api/webhook/test', methods=['POST'])
+def test_webhook():
+    """Test endpoint for TradingView webhook verification"""
+    from flask import jsonify, request
+    data = request.json if request.is_json else {}
+    logger.info(f"Webhook test received: {data}")
+    return jsonify({
+        "status": "success", 
+        "message": "Webhook received successfully!",
+        "data": data
+    })
 
 @app.errorhandler(404)
 def not_found_error(error):
