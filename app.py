@@ -91,6 +91,25 @@ def test_webhook():
         "data": data
     })
 
+@app.route('/api/test/socket', methods=['POST'])
+def test_socket():
+    """Test endpoint to verify SocketIO is working"""
+    from flask import jsonify, request
+    data = request.json if request.is_json else {}
+    test_event = {
+        'symbol': data.get('symbol', 'TEST'),
+        'action': data.get('action', 'BUY'),
+        'orderid': data.get('orderid', 'TEST123')
+    }
+    logger.info(f"🧪 Testing SocketIO with event: {test_event}")
+    socketio.emit('order_event', test_event)
+    logger.success("✅ Test socket event emitted")
+    return jsonify({
+        "status": "success",
+        "message": "Test socket event emitted",
+        "event_data": test_event
+    })
+
 @app.errorhandler(404)
 def not_found_error(error):
     return jsonify({'status': 'error', 'message': 'Endpoint not found'}), 404

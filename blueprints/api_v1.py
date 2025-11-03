@@ -58,7 +58,10 @@ def place_order():
               
         
         if res.status == 200:
-            socketio.emit('order_event', {'symbol': data['symbol'], 'action': data['action'], 'orderid': order_id})
+            event_data = {'symbol': data['symbol'], 'action': data['action'], 'orderid': order_id}
+            print(f'🔔 Emitting order_event via SocketIO: {event_data}')
+            socketio.emit('order_event', event_data)
+            print(f'✅ SocketIO event emitted successfully')
             
             if order_id:
                 order_response_data = {
@@ -127,6 +130,7 @@ def place_smart_order():
         
         #print(f'placesmartorder_resp : {place_smartorder_api(data)}')
         res, response_data, order_id = place_smartorder_api(data)
+        print(f'placesmartorder response: {response_data} and orderid is {order_id}')
         
         if res == None and response_data.get('message'):
             order_response_data = {
@@ -140,7 +144,10 @@ def place_smart_order():
         
         # Check if the 'data' field is not null and the order was successfully placed
         if res.status == 200:
-            socketio.emit('order_event', {'symbol': data['symbol'], 'action': data['action'], 'orderid': order_id})
+            event_data = {'symbol': data['symbol'], 'action': data['action'], 'orderid': order_id}
+            print(f'🔔 Emitting order_event (smart order) via SocketIO: {event_data}')
+            socketio.emit('order_event', event_data)
+            print(f'✅ SocketIO event emitted successfully')
             
             if order_id:
                 order_response_data = {
@@ -199,7 +206,10 @@ def close_position():
         response_code, status_code = close_all_positions(current_api_key)
 
         # Emitting a socket event for closing position
-        socketio.emit('close_position', {'status': 'success', 'message': 'All Open Positions SquaredOff'})
+        event_data = {'status': 'success', 'message': 'All Open Positions SquaredOff'}
+        print(f'🔔 Emitting close_position via SocketIO: {event_data}')
+        socketio.emit('close_position', event_data)
+        print(f'✅ SocketIO event emitted successfully')
         
         # Asynchronously logging the action
         executor.submit(async_log_order, 'squareoff', sqoff_request_data, "All Open Positions SquaredOff")
@@ -247,7 +257,10 @@ def cancel_order_route():
         response_message, status_code = cancel_order(data['orderid'])
 
         # Emit the cancellation event to the client via Socket.IO
-        socketio.emit('cancel_order_event', {'status': response_message['status'], 'orderid': data['orderid']})
+        event_data = {'status': response_message['status'], 'orderid': data['orderid']}
+        print(f'🔔 Emitting cancel_order_event via SocketIO: {event_data}')
+        socketio.emit('cancel_order_event', event_data)
+        print(f'✅ SocketIO event emitted successfully')
 
         # Log the successful order cancellation attempt
         executor.submit(async_log_order, 'cancelorder', order_request_data, response_message)
@@ -294,7 +307,10 @@ def cancel_all_orders():
 
         # Emit events for each canceled order
         for orderid in canceled_orders:
-            socketio.emit('cancel_order_event', {'status': 'success', 'orderid': orderid})
+            event_data = {'status': 'success', 'orderid': orderid}
+            print(f'🔔 Emitting cancel_order_event via SocketIO: {event_data}')
+            socketio.emit('cancel_order_event', event_data)
+            print(f'✅ SocketIO event emitted successfully')
         
         # Optionally, emit events for failed cancellations if needed
 
@@ -344,7 +360,10 @@ def modify_order_route():
         response_message, status_code = modify_order(data)
         
         # Emitting the modification event to the client via Socket.IO
-        socketio.emit('modify_order_event', {'status': response_message['status'], 'orderid': response_message.get('orderid')})
+        event_data = {'status': response_message['status'], 'orderid': response_message.get('orderid')}
+        print(f'🔔 Emitting modify_order_event via SocketIO: {event_data}')
+        socketio.emit('modify_order_event', event_data)
+        print(f'✅ SocketIO event emitted successfully')
         
         # Asynchronously logging the order modification attempt
         executor.submit(async_log_order, 'modifyorder', order_request_data, response_message)

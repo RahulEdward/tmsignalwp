@@ -13,6 +13,26 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
+    <!-- Socket.IO Client Library -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    
+    <!-- Custom Styles for Flash Messages -->
+    <style>
+        @keyframes slide-in {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        .animate-slide-in {
+            animation: slide-in 0.3s ease-out;
+        }
+    </style>
+    
     <script>
         tailwind.config = {
             theme: {
@@ -141,5 +161,8 @@
             </main>
         </div>
     </div>
+    
+    <!-- Socket.IO Event Handlers -->
+    <script src="{{ url_for('static', filename='js/socket-events.js') }}"></script>
 </body>
 </html>
