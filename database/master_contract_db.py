@@ -13,6 +13,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from dotenv import load_dotenv
 from database.db import db 
 from extensions import socketio  # Import SocketIO
+from utils.colored_logger import logger
 
 load_dotenv()
 
@@ -27,7 +28,7 @@ DATABASE_URL = (
     'sqlite:///tmp/algo.db'  # Use /tmp for serverless fallback
 )
 
-print(f"Master Contract DB using: {DATABASE_URL[:50]}...")
+logger.database(f"Master Contract DB using: {DATABASE_URL[:50]}...")
 
 engine = create_engine(DATABASE_URL)
 db_session = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine))
@@ -53,7 +54,7 @@ class SymToken(Base):
     __table_args__ = (Index('idx_symbol_exchange', 'symbol', 'exchange'),)
 
 def init_db():
-    print("Initializing Master Contract DB")
+    logger.database("Initializing Master Contract DB")
     Base.metadata.create_all(bind=engine)
 
 def delete_symtoken_table():
@@ -213,12 +214,12 @@ def delete_angel_temp_data(output_path):
 
 
 def master_contract_download():
-    print("Downloading Master Contract")
+    logger.info("Downloading Master Contract")
     url = 'https://margincalculator.angelbroking.com/OpenAPI_File/files/OpenAPIScripMaster.json'
     
     try:
         # For serverless, use in-memory processing instead of file system
-        print("Starting download from Angel Broking...")
+        logger.info("Starting download from Angel Broking...")
         import requests
         import json
         
@@ -226,17 +227,17 @@ def master_contract_download():
         if response.status_code != 200:
             raise Exception(f"Failed to download data. Status code: {response.status_code}")
         
-        print("Processing downloaded data...")
+        logger.info("Processing downloaded data...")
         data = response.json()
         
         # Process data directly without saving to file
         token_df = process_angel_data_direct(data)
         
-        print("Clearing existing data...")
+        logger.warning("Clearing existing data...")
         delete_symtoken_table()
-        print("Inserting new data...")
+        logger.info("Inserting new data...")
         copy_from_dataframe(token_df)
-        print(f"Master contract download completed successfully! Total symbols: {len(token_df)}")
+        logger.success(f"Master contract download completed successfully! Total symbols: {len(token_df)}")
         
         # Try to emit socket event, but don't fail if it doesn't work (Vercel serverless)
         try:

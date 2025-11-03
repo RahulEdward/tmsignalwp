@@ -10,6 +10,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dotenv import load_dotenv
 from datetime import datetime
 import pytz
+from utils.colored_logger import logger
 
 
 load_dotenv()

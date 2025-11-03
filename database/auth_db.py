@@ -12,6 +12,7 @@ from database.db import db
 from cachetools import TTLCache
 import traceback
 from datetime import datetime, timedelta  # <-- FIX: Import timedelta
+from utils.colored_logger import logger
 
 # Define a cache for the auth tokens and api_key with a max size and a 30-second TTL
 auth_cache = TTLCache(maxsize=1024, ttl=30)
@@ -30,7 +31,7 @@ DATABASE_URL = (
     'sqlite:///tmp/algo.db'  # Use /tmp for serverless fallback
 )
 
-print(f"Auth DB using: {DATABASE_URL[:50]}...")
+logger.database(f"Auth DB using: {DATABASE_URL[:50]}...")
 
 try:
     engine = create_engine(
@@ -44,9 +45,9 @@ try:
     Base = declarative_base()
     Base.query = db_session.query_property()
     
-    print(f"Database engine created successfully for: {DATABASE_URL}")
+    logger.success(f"Database engine created successfully for: {DATABASE_URL}")
 except Exception as e:
-    print(f"ERROR creating database engine: {str(e)}")
+    logger.error(f"ERROR creating database engine: {str(e)}")
     traceback.print_exc()
     raise
 
@@ -93,26 +94,26 @@ class Users(Base):
     created_at = Column(DateTime(timezone=True), default=func.now())
 
 def init_db():
-    print("Initializing Auth DB")
+    logger.database("Initializing Auth DB")
     try:
         Base.metadata.create_all(bind=engine)
-        print("Database tables created successfully")
+        logger.success("Database tables created successfully")
     except Exception as e:
-        print(f"ERROR initializing database: {str(e)}")
+        logger.error(f"ERROR initializing database: {str(e)}")
         traceback.print_exc()
         raise
 
 def upsert_auth(name, auth_token, revoke=False):
     """Store or update authentication token for a user"""
     if not name:
-        print(f"ERROR in upsert_auth: Empty username")
+        logger.error(f"ERROR in upsert_auth: Empty username")
         return None
         
     if not auth_token and not revoke:
-        print(f"ERROR in upsert_auth: Empty auth token for user: {name}")
+        logger.error(f"ERROR in upsert_auth: Empty auth token for user: {name}")
         return None
     
-    print(f"Upserting auth token for user: {name}, token length: {len(auth_token) if auth_token else 0}, revoke: {revoke}")
+    logger.info(f"Upserting auth token for user: {name}, token length: {len(auth_token) if auth_token else 0}, revoke: {revoke}")
     
     try:
         auth_obj = Auth.query.filter_by(name=name).first()

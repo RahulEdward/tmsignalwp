@@ -19,7 +19,7 @@ from database.auth_db import init_db as ensure_auth_tables_exists
 from database.master_contract_db import init_db as ensure_master_contract_tables_exists
 from database.apilog_db import init_db as ensure_api_log_tables_exists
 
-
+from utils.colored_logger import logger
 from dotenv import load_dotenv
 import os
 
@@ -88,24 +88,39 @@ def not_found_error(error):
 
 if __name__ == '__main__':
     
+    # Print startup header
+    logger.header("🚀 TradingMaven Server Starting...")
+    
     # Setup ngrok
-       
+    logger.info("Checking ngrok configuration...")
+    
     # Check if NGROK_ALLOW is set to 'TRUE' in the environment
     if os.getenv('NGROK_ALLOW') == 'TRUE':
         # Setup ngrok if allowed
         from pyngrok import ngrok 
         
         public_url = ngrok.connect(name='flask').public_url  # Assuming Flask runs on the default port 5000
-        print(" * ngrok URL: " + public_url + " *")
+        logger.ngrok(f"Public URL: {public_url}")
     else:
-        print(" * ngrok is not allowed by environment variable settings *")
+        logger.warning("ngrok is disabled by environment variable settings")
 
-
+    logger.info("Initializing database connections...")
     with app.app_context():
         # Ensure all the tables exist
-        
+        logger.database("Initializing Auth DB...")
         ensure_auth_tables_exists()
+        logger.success("Auth DB initialized successfully")
+        
+        logger.database("Initializing Master Contract DB...")
         ensure_master_contract_tables_exists()
+        logger.success("Master Contract DB initialized successfully")
+        
+        logger.database("Initializing API Log DB...")
         ensure_api_log_tables_exists()
+        logger.success("API Log DB initialized successfully")
 
+    logger.server("Starting Flask-SocketIO server...")
+    logger.info("Server will be available at: http://127.0.0.1:5000")
+    logger.success("All systems ready! 🎉")
+    
     socketio.run(app)
