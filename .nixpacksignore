@@ -1,0 +1,14 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.git/
+.vscode/
+.vercel/
+.kiro/
+*.log
+tmp/
+instance/
+db/*.db
