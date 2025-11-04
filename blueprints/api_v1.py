@@ -51,7 +51,7 @@ def place_order():
             return jsonify({'status': 'error', 'message': 'Invalid TM-Algo apikey'}), 403
 
         
-        res, response_data, order_id = place_order_api(data)
+        res, response_data, order_id = place_order_api(data, user_id=login_username)
         print(f'placeorder response : {response_data} and orderid is {order_id}')
 
         # Check if the 'data' field is not null and the order was successfully placed
@@ -129,7 +129,7 @@ def place_smart_order():
 
         
         #print(f'placesmartorder_resp : {place_smartorder_api(data)}')
-        res, response_data, order_id = place_smartorder_api(data)
+        res, response_data, order_id = place_smartorder_api(data, user_id=user_id)
         print(f'placesmartorder response: {response_data} and orderid is {order_id}')
         
         if res == None and response_data.get('message'):

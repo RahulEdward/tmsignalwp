@@ -83,16 +83,34 @@ def get_open_position(tradingsymbol, exchange, producttype):
 
     return net_qty
 
-def place_order_api(data):
+def place_order_api(data, user_id=None):
     # Get auth token and API key from session if available
     from flask import session
+    from database.auth_db import get_auth_tokens, get_user_by_id
     
-    AUTH_TOKEN = session.get('AUTH_TOKEN')  # Changed from 'auth_token' to 'AUTH_TOKEN'
+    AUTH_TOKEN = session.get('AUTH_TOKEN')  # Try session first
+    BROKER_API_KEY = session.get('apikey')
+    
+    # If not in session and user_id provided, get from database
+    if AUTH_TOKEN is None and user_id:
+        # Get user details from database
+        user = get_user_by_id(user_id)
+        if user:
+            # Get auth tokens from database
+            tokens = get_auth_tokens(user.username)
+            if tokens.get('status') == 'success':
+                AUTH_TOKEN = tokens.get('access_token')
+                print(f"✅ Using auth token from database for user: {user.username}")
+            
+            # Get broker API key from user record
+            BROKER_API_KEY = user.apikey
+            print(f"✅ Using broker API key from database for user: {user_id}")
+    
+    # Fallback to environment variables
     if AUTH_TOKEN is None:
         login_username = os.getenv('LOGIN_USERNAME')
         AUTH_TOKEN = get_auth_token(login_username)
     
-    BROKER_API_KEY = session.get('apikey')  # Changed from 'api_key' to 'apikey'
     if BROKER_API_KEY is None:
         BROKER_API_KEY = os.getenv('BROKER_API_KEY')
         
@@ -137,7 +155,7 @@ def place_order_api(data):
         orderid = None
     return res, response_data, orderid
 
-def place_smartorder_api(data):
+def place_smartorder_api(data, user_id=None):
 
     #If no API call is made in this function then res will return None
     res = None
@@ -168,7 +186,7 @@ def place_smartorder_api(data):
         quantity = data['quantity']
         #print(f"action : {action}")
         #print(f"Quantity : {quantity}")
-        res, response, orderid = place_order_api(data)
+        res, response, orderid = place_order_api(data, user_id=user_id)
         #print(res)
         #print(response)
         
@@ -210,7 +228,7 @@ def place_smartorder_api(data):
 
         #print(order_data)
         # Place the order
-        res, response, orderid = place_order_api(order_data)
+        res, response, orderid = place_order_api(order_data, user_id=user_id)
         #print(res)
         #print(response)
         
