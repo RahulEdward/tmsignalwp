@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Test - TM-Algo</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .connected {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .disconnected {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .event {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #events {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔌 TM-Algo WebSocket Test</h1>
+        
+        <div id="status" class="status disconnected">
+            ❌ Disconnected
+        </div>
+        
+        <div>
+            <button onclick="testOrderEvent()">Test Order Event</button>
+            <button onclick="testCancelEvent()">Test Cancel Event</button>
+            <button onclick="testClosePosition()">Test Close Position</button>
+            <button onclick="clearEvents()">Clear Events</button>
+        </div>
+        
+        <h3>Received Events:</h3>
+        <div id="events"></div>
+    </div>
+
+    <script>
+        // Connect to Socket.IO server
+        const socket = io('http://127.0.0.1:5000', {
+            transports: ['websocket', 'polling']
+        });
+
+        const statusDiv = document.getElementById('status');
+        const eventsDiv = document.getElementById('events');
+
+        // Connection events
+        socket.on('connect', () => {
+            console.log('✅ Connected to WebSocket server');
+            statusDiv.className = 'status connected';
+            statusDiv.innerHTML = '✅ Connected (ID: ' + socket.id + ')';
+            addEvent('System', 'Connected to server', 'success');
+        });
+
+        socket.on('disconnect', () => {
+            console.log('❌ Disconnected from WebSocket server');
+            statusDiv.className = 'status disconnected';
+            statusDiv.innerHTML = '❌ Disconnected';
+            addEvent('System', 'Disconnected from server', 'error');
+        });
+
+        socket.on('connect_error', (error) => {
+            console.error('Connection error:', error);
+            addEvent('System', 'Connection error: ' + error.message, 'error');
+        });
+
+        // Listen for order events
+        socket.on('order_event', (data) => {
+            console.log('📦 Order event received:', data);
+            addEvent('order_event', JSON.stringify(data, null, 2), 'info');
+        });
+
+        // Listen for cancel order events
+        socket.on('cancel_order_event', (data) => {
+            console.log('❌ Cancel order event received:', data);
+            addEvent('cancel_order_event', JSON.stringify(data, null, 2), 'info');
+        });
+
+        // Listen for close position events
+        socket.on('close_position', (data) => {
+            console.log('🔒 Close position event received:', data);
+            addEvent('close_position', JSON.stringify(data, null, 2), 'info');
+        });
+
+        // Listen for modify order events
+        socket.on('modify_order_event', (data) => {
+            console.log('✏️ Modify order event received:', data);
+            addEvent('modify_order_event', JSON.stringify(data, null, 2), 'info');
+        });
+
+        function addEvent(type, message, level) {
+            const timestamp = new Date().toLocaleTimeString();
+            const eventDiv = document.createElement('div');
+            eventDiv.className = 'event';
+            eventDiv.innerHTML = `
+                <strong>[${timestamp}] ${type}</strong><br>
+                <pre style="margin: 5px 0; white-space: pre-wrap;">${message}</pre>
+            `;
+            eventsDiv.insertBefore(eventDiv, eventsDiv.firstChild);
+        }
+
+        function testOrderEvent() {
+            fetch('http://127.0.0.1:5000/api/test/socket', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    symbol: 'SBIN-EQ',
+                    action: 'BUY',
+                    orderid: 'TEST' + Date.now()
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Test response:', data);
+                addEvent('Test', 'Order event triggered', 'success');
+            })
+            .catch(error => {
+                console.error('Test error:', error);
+                addEvent('Test', 'Error: ' + error.message, 'error');
+            });
+        }
+
+        function testCancelEvent() {
+            socket.emit('cancel_order_event', {
+                status: 'success',
+                orderid: 'TEST' + Date.now()
+            });
+            addEvent('Test', 'Cancel event sent manually', 'success');
+        }
+
+        function testClosePosition() {
+            socket.emit('close_position', {
+                status: 'success',
+                message: 'All positions closed'
+            });
+            addEvent('Test', 'Close position event sent manually', 'success');
+        }
+
+        function clearEvents() {
+            eventsDiv.innerHTML = '';
+        }
+    </script>
+</body>
+</html>
